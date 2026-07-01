@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personal Password Combination Generator</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1b2430;
+      --muted: #667085;
+      --line: #d9e0e8;
+      --panel: #ffffff;
+      --page: #f5f7fb;
+      --accent: #176b87;
+      --accent-strong: #0f4c5c;
+      --warn: #a15c07;
+      --good: #16805c;
+      --danger: #b42318;
+      --shadow: 0 14px 36px rgba(27, 36, 48, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--page);
+      color: var(--ink);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      background: #fbfcfe;
+      border-right: 1px solid var(--line);
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .workspace {
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .title-block {
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.55rem;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.92rem;
+    }
+
+    .notice {
+      border: 1px solid #f5d790;
+      border-left: 4px solid var(--warn);
+      background: #fff8e8;
+      color: #684105;
+      border-radius: 8px;
+      padding: 12px 14px;
+      line-height: 1.4;
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #344054;
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 10px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, 0.14);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 9px 13px;
+      cursor: pointer;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 120ms ease, background 120ms ease, border 120ms ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn.primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .btn.secondary {
+      border-color: var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .toolbar,
+    .stats-grid,
+    .results-panel,
+    .empty-state {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .toolbar {
+      padding: 16px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .toolbar label,
+    .toolbar input,
+    .toolbar select {
+      min-width: 0;
+    }
+
+    .toolbar label:first-child {
+      grid-column: span 2;
+    }
+
+    .toolbar .btn {
+      width: 100%;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .stat {
+      padding: 16px;
+      border-right: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .stat:last-child {
+      border-right: 0;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.45rem;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 650;
+    }
+
+    .results-panel {
+      overflow: hidden;
+    }
+
+    .formatted-output {
+      margin: 0;
+      padding: 16px;
+      max-height: 64vh;
+      overflow: auto;
+      background: #101820;
+      color: #eff8ff;
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .table-wrap {
+      max-height: 64vh;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 0.92rem;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #eef4f7;
+      color: #243642;
+      z-index: 1;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    td:first-child,
+    th:first-child {
+      width: 74px;
+      color: var(--muted);
+    }
+
+    td:nth-child(2) {
+      font-family: "Cascadia Mono", "SFMono-Regular", Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 0.78rem;
+      font-weight: 750;
+      background: #edf6f3;
+      color: var(--good);
+      white-space: nowrap;
+    }
+
+    .pill.low {
+      color: var(--danger);
+      background: #fff1f0;
+    }
+
+    .pill.medium {
+      color: var(--warn);
+      background: #fff8e8;
+    }
+
+    .empty-state {
+      min-height: 54vh;
+      display: grid;
+      place-items: center;
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state h2 {
+      color: var(--ink);
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+    }
+
+    .empty-state p {
+      max-width: 540px;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1040px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toolbar label:first-child {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .sidebar,
+      .workspace {
+        padding: 16px;
+      }
+
+      .field-row,
+      .toolbar,
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stat {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .stat:last-child {
+        border-bottom: 0;
+      }
+
+      th,
+      td {
+        padding: 10px;
+      }
+
+      td:first-child,
+      th:first-child {
+        width: 52px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="title-block">
+        <h1>Personal Password Combination Generator</h1>
+        <p class="subtitle">Create local wordlist-style combinations for cybersecurity education, password auditing, digital forensics research, and authorized assessments.</p>
+      </div>
+
+      <div class="notice">Use only with accounts, systems, and datasets you own or are explicitly authorized to assess. All processing happens in this browser session.</div>
+
+      <form id="detailsForm" class="form-grid">
+        <label>Full Name
+          <input name="fullName" autocomplete="name" placeholder="Example: Anaya Thomas">
+        </label>
+        <label>House Name
+          <input name="houseName" placeholder="Example: Rose Villa">
+        </label>
+        <div class="field-row">
+          <label>Father's Name
+            <input name="fatherName" placeholder="Example: Joseph">
+          </label>
+          <label>Mother's Name
+            <input name="motherName" placeholder="Example: Maria">
+          </label>
+        </div>
+        <div class="field-row">
+          <label>Date of Birth
+            <input name="dob" type="date">
+          </label>
+          <label>Year of Birth
+            <input name="birthYear" inputmode="numeric" maxlength="4" placeholder="2003">
+          </label>
+        </div>
+        <div class="field-row">
+          <label>Nickname
+            <input name="nickname" placeholder="Example: anu">
+          </label>
+          <label>Pet Name
+            <input name="petName" placeholder="Example: bruno">
+          </label>
+        </div>
+        <div class="field-row">
+          <label>Favorite Number
+            <input name="favoriteNumber" inputmode="numeric" placeholder="7, 21, 123">
+          </label>
+          <label>Favorite Color
+            <input name="favoriteColor" placeholder="Example: blue">
+          </label>
+        </div>
+        <label>Siblings' Names
+          <input name="siblings" placeholder="Comma separated names">
+        </label>
+        <label>Hobbies
+          <input name="hobbies" placeholder="Example: football, guitar">
+        </label>
+        <label>Other Details
+          <input name="otherDetails" placeholder="School, place, team, vehicle, keywords">
+        </label>
+        <label>Email Address
+          <input name="email" type="email" autocomplete="email" placeholder="name@example.com">
+        </label>
+        <div class="actions">
+          <button class="btn primary" type="submit">Generate</button>
+          <button class="btn secondary" type="reset">Clear</button>
+        </div>
+      </form>
+    </aside>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <label>Search combinations
+          <input id="searchInput" placeholder="Type to search">
+        </label>
+        <label>Minimum length
+          <input id="minLength" type="number" min="0" value="0">
+        </label>
+        <label>Maximum length
+          <input id="maxLength" type="number" min="1" value="32">
+        </label>
+        <label>Complexity
+          <select id="complexityFilter">
+            <option value="all">All</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label>Output view
+          <select id="viewSelect">
+            <option value="table">Table</option>
+            <option value="list">Plain list</option>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+            <option value="html">HTML</option>
+            <option value="xml">XML</option>
+          </select>
+        </label>
+        <label>Export
+          <select id="exportSelect">
+            <option value="">Choose format</option>
+            <option value="txt">TXT</option>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="md">Markdown</option>
+            <option value="html">HTML</option>
+            <option value="xml">XML</option>
+          </select>
+        </label>
+        <button class="btn secondary" id="downloadColumnButton" type="button">Download Combinations</button>
+      </div>
+
+      <div id="stats" class="stats-grid hidden">
+        <div class="stat">
+          <strong id="totalCount">0</strong>
+          <span>Total generated</span>
+        </div>
+        <div class="stat">
+          <strong id="visibleCount">0</strong>
+          <span>Visible after filters</span>
+        </div>
+        <div class="stat">
+          <strong id="tokenCount">0</strong>
+          <span>Extracted tokens</span>
+        </div>
+        <div class="stat">
+          <strong id="highCount">0</strong>
+          <span>High complexity</span>
+        </div>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <div>
+          <h2>Enter authorized audit details to generate combinations.</h2>
+          <p>The results table will show searchable combinations with length and complexity tags, then let you export the filtered list.</p>
+        </div>
+      </div>
+
+      <div id="resultsPanel" class="results-panel hidden">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Combination</th>
+                <th>Length</th>
+                <th>Complexity</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+        <pre id="formattedOutput" class="formatted-output hidden"></pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const MAX_RESULTS = 25000;
+    const SPECIALS = ["@", "#", "_", ".", "!", "$"];
+    const COMMON_NUMBERS = ["1", "7", "12", "01", "007", "21", "99", "123", "1234", "2024", "2025"];
+    const LEET_MAP = { a: "4", e: "3", i: "1", o: "0", s: "5" };
+    const form = document.getElementById("detailsForm");
+    const resultsBody = document.getElementById("resultsBody");
+    const searchInput = document.getElementById("searchInput");
+    const minLengthInput = document.getElementById("minLength");
+    const maxLengthInput = document.getElementById("maxLength");
+    const complexityFilter = document.getElementById("complexityFilter");
+    const viewSelect = document.getElementById("viewSelect");
+    const exportSelect = document.getElementById("exportSelect");
+    const downloadColumnButton = document.getElementById("downloadColumnButton");
+    const totalCount = document.getElementById("totalCount");
+    const visibleCount = document.getElementById("visibleCount");
+    const tokenCount = document.getElementById("tokenCount");
+    const highCount = document.getElementById("highCount");
+    const stats = document.getElementById("stats");
+    const emptyState = document.getElementById("emptyState");
+    const resultsPanel = document.getElementById("resultsPanel");
+    const tableWrap = document.querySelector(".table-wrap");
+    const formattedOutput = document.getElementById("formattedOutput");
+
+    let generated = [];
+    let filtered = [];
+    let extractedTokenCount = 0;
+
+    function cleanWord(value) {
+      return String(value || "").normalize("NFKD").replace(/[^\w.@+-\s,/-]/g, " ").trim();
+    }
+
+    function splitWords(value) {
+      return cleanWord(value)
+        .split(/[\s,._@+\-/]+/)
+        .map((word) => word.replace(/[^a-zA-Z0-9]/g, ""))
+        .filter((word) => word.length > 1);
+    }
+
+    function unique(values) {
+      return [...new Set(values.filter(Boolean))];
+    }
+
+    function titleCase(value) {
+      return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : value;
+    }
+
+    function reverse(value) {
+      return value.split("").reverse().join("");
+    }
+
+    function leet(value) {
+      return value.toLowerCase().replace(/[aeios]/g, (char) => LEET_MAP[char] || char);
+    }
+
+    function initialsFrom(value) {
+      const words = splitWords(value).filter((word) => /[a-zA-Z]/.test(word));
+      if (!words.length) return [];
+      const lower = words.map((word) => word[0].toLowerCase()).join("");
+      return unique([lower, lower.toUpperCase(), titleCase(lower)]);
+    }
+
+    function dateParts(dateValue, birthYear) {
+      const parts = [];
+      if (dateValue) {
+        const [year, month, day] = dateValue.split("-");
+        if (year && month && day) {
+          parts.push(year, year.slice(-2), month, day, `${day}${month}`, `${month}${day}`, `${day}${month}${year}`, `${year}${month}${day}`);
+        }
+      }
+      if (birthYear) {
+        const year = birthYear.replace(/\D/g, "");
+        if (year) parts.push(year, year.slice(-2));
+      }
+      return unique(parts);
+    }
+
+    function substrings(word) {
+      if (!/[a-zA-Z]/.test(word)) return [];
+      const lower = word.toLowerCase();
+      const chunks = [];
+      for (let size = 3; size <= Math.min(6, lower.length); size += 1) {
+        chunks.push(lower.slice(0, size), lower.slice(-size));
+      }
+      return chunks;
+    }
+
+    function wordVariants(word) {
+      const lower = word.toLowerCase();
+      const variants = [lower, titleCase(lower), lower.toUpperCase()];
+      if (lower.length > 2) variants.push(reverse(lower), leet(lower));
+      return unique(variants);
+    }
+
+    function collectInputs(formData) {
+      const data = Object.fromEntries(formData.entries());
+      const emailUser = cleanWord(data.email).split("@")[0] || "";
+      const directValues = [
+        data.fullName,
+        data.houseName,
+        data.fatherName,
+        data.motherName,
+        data.nickname,
+        data.petName,
+        data.favoriteColor,
+        data.siblings,
+        data.hobbies,
+        data.otherDetails,
+        emailUser
+      ];
+      const words = directValues.flatMap(splitWords);
+      const initials = [data.fullName, data.fatherName, data.motherName, data.siblings, data.hobbies, data.otherDetails].flatMap(initialsFrom);
+      const numbers = unique([
+        ...dateParts(data.dob, data.birthYear),
+        ...splitWords(data.favoriteNumber).map((word) => word.replace(/\D/g, "")).filter(Boolean),
+        ...COMMON_NUMBERS
+      ]);
+      const meaningful = words.flatMap(substrings);
+      const tokens = unique([...words, ...meaningful, ...initials, emailUser].flatMap(wordVariants));
+      return { tokens, numbers };
+    }
+
+    function classifyComplexity(value) {
+      const classes = [
+        /[a-z]/.test(value),
+        /[A-Z]/.test(value),
+        /\d/.test(value),
+        /[^a-zA-Z0-9]/.test(value)
+      ].filter(Boolean).length;
+      if (value.length >= 10 && classes >= 3) return "high";
+      if (value.length >= 8 && classes >= 2) return "medium";
+      return "low";
+    }
+
+    function pushResult(set, value) {
+      if (value && value.length >= 3 && value.length <= 48 && set.size < MAX_RESULTS) {
+        set.add(value);
+      }
+    }
+
+    function generateCombinations(tokens, numbers) {
+      const set = new Set();
+      const base = tokens.slice(0, 180);
+      const nums = numbers.slice(0, 40);
+
+      base.forEach((token) => {
+        pushResult(set, token);
+        nums.forEach((num) => {
+          pushResult(set, `${token}${num}`);
+          pushResult(set, `${token}@${num}`);
+          pushResult(set, `${token}#${num}`);
+          pushResult(set, `${token}_${num}`);
+          pushResult(set, `${token}!${num}`);
+          pushResult(set, `${token}.${num}`);
+        });
+      });
+
+      for (let i = 0; i < base.length && set.size < MAX_RESULTS; i += 1) {
+        for (let j = 0; j < base.length && set.size < MAX_RESULTS; j += 1) {
+          if (i === j) continue;
+          const first = base[i];
+          const second = base[j];
+          pushResult(set, `${first}${second}`);
+          SPECIALS.forEach((symbol) => pushResult(set, `${first}${symbol}${second}`));
+          nums.slice(0, 12).forEach((num) => {
+            pushResult(set, `${first}${second}${num}`);
+            pushResult(set, `${first}${symbolSafe(first, second)}${num}`);
+          });
+        }
+      }
+
+      return [...set].map((value) => ({
+        value,
+        length: value.length,
+        complexity: classifyComplexity(value)
+      }));
+    }
+
+    function symbolSafe(first, second) {
+      return `${SPECIALS[(first.length + second.length) % SPECIALS.length]}${second}`;
+    }
+
+    function applyFilters() {
+      const query = searchInput.value.trim().toLowerCase();
+      const minLength = Number(minLengthInput.value || 0);
+      const maxLength = Number(maxLengthInput.value || 99);
+      const complexity = complexityFilter.value;
+
+      filtered = generated.filter((item) => {
+        const matchesSearch = !query || item.value.toLowerCase().includes(query);
+        const matchesLength = item.length >= minLength && item.length <= maxLength;
+        const matchesComplexity = complexity === "all" || item.complexity === complexity;
+        return matchesSearch && matchesLength && matchesComplexity;
+      });
+
+      renderResults();
+    }
+
+    function renderResults() {
+      visibleCount.textContent = filtered.length.toLocaleString();
+      const view = viewSelect.value;
+      tableWrap.classList.toggle("hidden", view !== "table");
+      formattedOutput.classList.toggle("hidden", view === "table");
+
+      if (view !== "table") {
+        formattedOutput.textContent = formatOutput(view, filtered);
+        return;
+      }
+
+      resultsBody.innerHTML = filtered.map((item, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(item.value)}</td>
+          <td>${item.length}</td>
+          <td><span class="pill ${item.complexity}">${item.complexity}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function formatOutput(format, items) {
+      if (format === "list") {
+        return items.map((item) => item.value).join("\n");
+      }
+      if (format === "csv") {
+        return csvOutput(items);
+      }
+      if (format === "json") {
+        return JSON.stringify(items.map((item, index) => ({
+          id: index + 1,
+          combination: item.value,
+          length: item.length,
+          complexity: item.complexity
+        })), null, 2);
+      }
+      if (format === "markdown") {
+        const header = "| # | Combination | Length | Complexity |\n|---:|---|---:|---|";
+        const rows = items.map((item, index) => `| ${index + 1} | \`${item.value.replace(/`/g, "\\`")}\` | ${item.length} | ${item.complexity} |`);
+        return [header, ...rows].join("\n");
+      }
+      if (format === "html") {
+        return htmlOutput(items);
+      }
+      if (format === "xml") {
+        return xmlOutput(items);
+      }
+      return "";
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function csvOutput(items) {
+      const rows = [["combination", "length", "complexity"], ...items.map((item) => [item.value, item.length, item.complexity])];
+      return rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+    }
+
+    function htmlOutput(items) {
+      const rows = items.map((item, index) => `<tr><td>${index + 1}</td><td>${escapeHtml(item.value)}</td><td>${item.length}</td><td>${item.complexity}</td></tr>`).join("\n");
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Password Combination Export</title>
+  <style>body{font-family:Arial,sans-serif;margin:24px;color:#1b2430}table{border-collapse:collapse;width:100%}th,td{border:1px solid #d9e0e8;padding:8px;text-align:left}th{background:#eef4f7}</style>
+</head>
+<body>
+  <h1>Password Combination Export</h1>
+  <p>Total combinations: ${items.length}</p>
+  <table>
+    <thead><tr><th>#</th><th>Combination</th><th>Length</th><th>Complexity</th></tr></thead>
+    <tbody>
+${rows}
+    </tbody>
+  </table>
+</body>
+</html>`;
+    }
+
+    function xmlOutput(items) {
+      const xmlEscape = (value) => String(value).replace(/[<>&'"]/g, (char) => ({
+        "<": "&lt;",
+        ">": "&gt;",
+        "&": "&amp;",
+        "'": "&apos;",
+        "\"": "&quot;"
+      }[char]));
+      const rows = items.map((item, index) => `  <combination id="${index + 1}" length="${item.length}" complexity="${item.complexity}">${xmlEscape(item.value)}</combination>`).join("\n");
+      return `<?xml version="1.0" encoding="UTF-8"?>\n<passwordCombinations count="${items.length}">\n${rows}\n</passwordCombinations>`;
+    }
+
+    function exportResults(format) {
+      if (!format || !filtered.length) return;
+      if (format === "txt") {
+        download("password-combinations.txt", filtered.map((item) => item.value).join("\n"), "text/plain");
+      }
+      if (format === "csv") {
+        download("password-combinations.csv", csvOutput(filtered), "text/csv");
+      }
+      if (format === "json") {
+        download("password-combinations.json", formatOutput("json", filtered), "application/json");
+      }
+      if (format === "md") {
+        download("password-combinations.md", formatOutput("markdown", filtered), "text/markdown");
+      }
+      if (format === "html") {
+        download("password-combinations.html", htmlOutput(filtered), "text/html");
+      }
+      if (format === "xml") {
+        download("password-combinations.xml", xmlOutput(filtered), "application/xml");
+      }
+      exportSelect.value = "";
+    }
+
+    function downloadCombinationColumn() {
+      if (!filtered.length) return;
+      download("password-combinations-only.txt", filtered.map((item) => item.value).join("\n"), "text/plain");
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const { tokens, numbers } = collectInputs(new FormData(form));
+      extractedTokenCount = tokens.length + numbers.length;
+      generated = generateCombinations(tokens, numbers);
+      filtered = generated;
+
+      totalCount.textContent = generated.length.toLocaleString();
+      tokenCount.textContent = extractedTokenCount.toLocaleString();
+      highCount.textContent = generated.filter((item) => item.complexity === "high").length.toLocaleString();
+      stats.classList.remove("hidden");
+      emptyState.classList.toggle("hidden", generated.length > 0);
+      resultsPanel.classList.toggle("hidden", generated.length === 0);
+      applyFilters();
+    });
+
+    form.addEventListener("reset", () => {
+      generated = [];
+      filtered = [];
+      resultsBody.innerHTML = "";
+      stats.classList.add("hidden");
+      resultsPanel.classList.add("hidden");
+      emptyState.classList.remove("hidden");
+      searchInput.value = "";
+      minLengthInput.value = "0";
+      maxLengthInput.value = "32";
+      complexityFilter.value = "all";
+      viewSelect.value = "table";
+      exportSelect.value = "";
+    });
+
+    [searchInput, minLengthInput, maxLengthInput, complexityFilter, viewSelect].forEach((control) => {
+      control.addEventListener("input", applyFilters);
+      control.addEventListener("change", applyFilters);
+    });
+
+    exportSelect.addEventListener("change", (event) => exportResults(event.target.value));
+    downloadColumnButton.addEventListener("click", downloadCombinationColumn);
+  </script>
+</body>
+</html>
